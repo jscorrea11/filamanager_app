@@ -1,16 +1,10 @@
 import { getStore } from "@netlify/blobs";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "Content-Type",
-  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-  "Content-Type": "application/json"
-};
-
-// GET all filaments
-export const handler = async (event, context) => {
-  if (event.httpMethod === "OPTIONS") {
-    return { statusCode: 200, headers: corsHeaders, body: "" };
+// Netlify Functions v2 — GET all filaments
+export default async (req, context) => {
+  // Handle CORS preflight
+  if (req.method === "OPTIONS") {
+    return new Response(null, { status: 204, headers: corsHeaders() });
   }
 
   try {
@@ -18,26 +12,30 @@ export const handler = async (event, context) => {
     const { blobs } = await store.list();
 
     const filaments = await Promise.all(
-      blobs.map(async (blob) => {
-        const data = await store.get(blob.key, { type: "json" });
-        return data;
-      })
+      blobs.map((blob) => store.get(blob.key, { type: "json" }))
     );
 
-    // Sort by createdAt descending
-    filaments.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    // Filter nulls and sort by createdAt desc
+    const sorted = filaments
+      .filter(Boolean)
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-    return {
-      statusCode: 200,
-      headers: corsHeaders,
-      body: JSON.stringify({ success: true, data: filaments })
-    };
+    return Response.json({ success: true, data: sorted }, { headers: corsHeaders() });
   } catch (error) {
-    console.error("Error fetching filaments:", error);
-    return {
-      statusCode: 500,
-      headers: corsHeaders,
-      body: JSON.stringify({ success: false, error: error.message })
-    };
+    console.error("filaments-get error:", error);
+    return Response.json(
+      { success: false, error: error.message },
+      { status: 500, headers: corsHeaders() }
+    );
   }
 };
+
+export const config = { path: "/api/filaments-get" };
+
+function corsHeaders() {
+  return {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+  };
+}

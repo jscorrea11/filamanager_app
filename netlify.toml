@@ -3,18 +3,13 @@
   functions = "netlify/functions"
 
 [functions]
+  # Use esbuild to bundle ES modules
   node_bundler = "esbuild"
-
-[[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/:splat"
-  status = 200
 
 [[headers]]
   for = "/*"
   [headers.values]
     X-Frame-Options = "DENY"
-    X-XSS-Protection = "1; mode=block"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
     Cache-Control = "no-cache"
