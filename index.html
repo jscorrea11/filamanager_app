@@ -1,482 +1,529 @@
 <!DOCTYPE html>
 <html lang="es" data-bs-theme="dark">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FilaManager — Gestión de Stock de Filamento 3D</title>
-  <meta name="description" content="Administra tu inventario de rollos de filamento para impresión 3D. Escanea códigos de barras, gestiona colores, marcas, materiales y estado de cada rollo." />
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="img/filamanager_icon.png" />
+
+  <meta name="description"
+    content="Administra tu inventario de rollos de filamento para impresión 3D. Escanea códigos de barras, gestiona colores, marcas, materiales y estado de cada rollo." />
 
   <!-- Bootstrap 5 -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
   <!-- Bootstrap Icons -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
   <!-- Google Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+    rel="stylesheet" />
   <!-- App CSS -->
   <link rel="stylesheet" href="css/style.css" />
 </head>
+
 <body>
 
-<!-- ══════════════════════════════ NAVBAR ══════════════════════════════ -->
-<nav class="navbar navbar-expand-lg navbar-dark fm-navbar sticky-top">
-  <div class="container-fluid px-4">
-    <a class="navbar-brand d-flex align-items-center gap-2" href="#">
-      <span class="fm-logo-icon"><i class="bi bi-layers-half"></i></span>
-      <span class="fm-brand-text">FilaManager</span>
-    </a>
-    <div class="d-flex align-items-center gap-2 ms-auto">
-      <span class="badge fm-badge-stat d-none d-md-inline-flex" id="navTotalCount">
-        <i class="bi bi-box-seam me-1"></i><span id="navCountNum">0</span> rollos
-      </span>
-      <button class="btn fm-btn-scan" id="openScannerBtn" title="Escanear código de barras">
-        <i class="bi bi-upc-scan me-2"></i>Escanear
-      </button>
-      <button class="btn fm-btn-add" id="openAddBtn" title="Agregar filamento">
-        <i class="bi bi-plus-lg me-1"></i>Agregar
-      </button>
+  <!-- ══════════════════════════════ NAVBAR ══════════════════════════════ -->
+  <nav class="navbar navbar-expand-lg navbar-dark fm-navbar sticky-top">
+    <div class="container-fluid px-4">
+      <a class="navbar-brand d-flex align-items-center gap-2" href="#">
+        <span class="fm-logo-icon"><i class="bi bi-layers-half"></i></span>
+        <span class="fm-brand-text">FilaManager</span>
+      </a>
+      <div class="d-flex align-items-center gap-2 ms-auto">
+        <span class="badge fm-badge-stat d-none d-md-inline-flex" id="navTotalCount">
+          <i class="bi bi-box-seam me-1"></i><span id="navCountNum">0</span> rollos
+        </span>
+        <button class="btn fm-btn-scan" id="openScannerBtn" title="Escanear código de barras">
+          <i class="bi bi-upc-scan me-2"></i>Escanear
+        </button>
+        <button class="btn fm-btn-add" id="openAddBtn" title="Agregar filamento">
+          <i class="bi bi-plus-lg me-1"></i>Agregar
+        </button>
+      </div>
     </div>
-  </div>
-</nav>
+  </nav>
 
-<!-- ══════════════════════════════ MAIN ══════════════════════════════ -->
-<main class="container-fluid px-3 px-md-4 py-4">
+  <!-- ══════════════════════════════ MAIN ══════════════════════════════ -->
+  <main class="container-fluid px-3 px-md-4 py-4">
 
-  <!-- ── STATS ROW ── -->
-  <div class="row g-3 mb-4" id="statsRow">
-    <div class="col-6 col-md-3">
-      <div class="fm-stat-card">
-        <div class="fm-stat-icon bg-primary-subtle"><i class="bi bi-box-seam text-primary"></i></div>
-        <div>
-          <div class="fm-stat-value" id="statTotal">0</div>
-          <div class="fm-stat-label">Total Rollos</div>
+    <!-- ── STATS ROW ── -->
+    <div class="row g-3 mb-4" id="statsRow">
+      <div class="col-6 col-md-3">
+        <div class="fm-stat-card">
+          <div class="fm-stat-icon bg-primary-subtle"><i class="bi bi-box-seam text-primary"></i></div>
+          <div>
+            <div class="fm-stat-value" id="statTotal">0</div>
+            <div class="fm-stat-label">Total Rollos</div>
+          </div>
         </div>
       </div>
-    </div>
-    <div class="col-6 col-md-3">
-      <div class="fm-stat-card">
-        <div class="fm-stat-icon bg-success-subtle"><i class="bi bi-check-circle text-success"></i></div>
-        <div>
-          <div class="fm-stat-value" id="statNew">0</div>
-          <div class="fm-stat-label">Nuevos</div>
+      <div class="col-6 col-md-3">
+        <div class="fm-stat-card">
+          <div class="fm-stat-icon bg-success-subtle"><i class="bi bi-check-circle text-success"></i></div>
+          <div>
+            <div class="fm-stat-value" id="statNew">0</div>
+            <div class="fm-stat-label">Nuevos</div>
+          </div>
         </div>
       </div>
-    </div>
-    <div class="col-6 col-md-3">
-      <div class="fm-stat-card">
-        <div class="fm-stat-icon bg-warning-subtle"><i class="bi bi-printer text-warning"></i></div>
-        <div>
-          <div class="fm-stat-value" id="statInUse">0</div>
-          <div class="fm-stat-label">En uso</div>
+      <div class="col-6 col-md-3">
+        <div class="fm-stat-card">
+          <div class="fm-stat-icon bg-warning-subtle"><i class="bi bi-printer text-warning"></i></div>
+          <div>
+            <div class="fm-stat-value" id="statInUse">0</div>
+            <div class="fm-stat-label">En uso</div>
+          </div>
         </div>
       </div>
-    </div>
-    <div class="col-6 col-md-3">
-      <div class="fm-stat-card">
-        <div class="fm-stat-icon bg-danger-subtle"><i class="bi bi-archive text-danger"></i></div>
-        <div>
-          <div class="fm-stat-value" id="statEmpty">0</div>
-          <div class="fm-stat-label">Vacíos</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── FILTERS / SEARCH ── -->
-  <div class="fm-filter-bar mb-4">
-    <div class="row g-2 align-items-center">
-      <div class="col-12 col-md-4">
-        <div class="fm-search-wrap">
-          <i class="bi bi-search fm-search-icon"></i>
-          <input type="text" class="form-control fm-search-input" id="searchInput" placeholder="Buscar por marca, color, material..." />
-        </div>
-      </div>
-      <div class="col-6 col-md-2">
-        <select class="form-select fm-select" id="filterMaterial">
-          <option value="">Todos los materiales</option>
-          <option>PLA</option><option>PETG</option><option>ABS</option>
-          <option>TPU</option><option>ASA</option><option>Nylon</option>
-          <option>Resina</option><option>Otro</option>
-        </select>
-      </div>
-      <div class="col-6 col-md-2">
-        <select class="form-select fm-select" id="filterStatus">
-          <option value="">Todos los estados</option>
-          <option value="new">Nuevo</option>
-          <option value="in-use">En uso</option>
-          <option value="stored">Almacenado</option>
-          <option value="empty">Vacío</option>
-        </select>
-      </div>
-      <div class="col-6 col-md-2">
-        <select class="form-select fm-select" id="filterBrand">
-          <option value="">Todas las marcas</option>
-        </select>
-      </div>
-      <div class="col-6 col-md-2">
-        <div class="btn-group w-100" role="group">
-          <button type="button" class="btn fm-view-btn active" id="viewGrid" title="Vista cuadrícula">
-            <i class="bi bi-grid-3x3-gap"></i>
-          </button>
-          <button type="button" class="btn fm-view-btn" id="viewList" title="Vista lista">
-            <i class="bi bi-list-ul"></i>
-          </button>
+      <div class="col-6 col-md-3">
+        <div class="fm-stat-card">
+          <div class="fm-stat-icon bg-danger-subtle"><i class="bi bi-archive text-danger"></i></div>
+          <div>
+            <div class="fm-stat-value" id="statEmpty">0</div>
+            <div class="fm-stat-label">Vacíos</div>
+          </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- ── LOADING ── -->
-  <div id="loadingOverlay" class="fm-loading">
-    <div class="fm-spinner"></div>
-    <p class="mt-3 text-muted">Cargando inventario...</p>
-  </div>
-
-  <!-- ── EMPTY STATE ── -->
-  <div id="emptyState" class="fm-empty-state d-none">
-    <div class="fm-empty-icon"><i class="bi bi-box-seam"></i></div>
-    <h4>Sin filamentos registrados</h4>
-    <p class="text-muted">Agrega tu primer rollo escaneando un código de barras o usando el botón de agregar.</p>
-    <button class="btn fm-btn-add mt-2" onclick="document.getElementById('openAddBtn').click()">
-      <i class="bi bi-plus-lg me-1"></i>Agregar filamento
-    </button>
-  </div>
-
-  <!-- ── GRID VIEW ── -->
-  <div class="row g-3" id="filamentsGrid"></div>
-
-  <!-- ── LIST VIEW ── -->
-  <div class="fm-list-wrap d-none" id="filamentsList">
-    <table class="table fm-table align-middle mb-0">
-      <thead>
-        <tr>
-          <th>Color</th>
-          <th>Marca / Material</th>
-          <th>Diámetro</th>
-          <th>Peso restante</th>
-          <th>Estado</th>
-          <th>Ubicación</th>
-          <th class="text-center">Acciones</th>
-        </tr>
-      </thead>
-      <tbody id="filamentsListBody"></tbody>
-    </table>
-  </div>
-
-</main>
-
-<!-- ══════════════════════════════ SCANNER MODAL ══════════════════════════════ -->
-<div class="modal fade" id="scannerModal" tabindex="-1" aria-labelledby="scannerModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content fm-modal">
-      <div class="modal-header border-0 pb-0">
-        <h5 class="modal-title fw-bold" id="scannerModalLabel">
-          <i class="bi bi-upc-scan me-2 text-primary"></i>Escanear Código de Barras
-        </h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <div id="scannerError" class="alert alert-danger d-none"></div>
-        <div id="scannerSuccessBanner" class="alert alert-success d-none">
-          <i class="bi bi-check-circle me-2"></i><span id="scanResultText"></span>
+    <!-- ── FILTERS / SEARCH ── -->
+    <div class="fm-filter-bar mb-4">
+      <div class="row g-2 align-items-center">
+        <div class="col-12 col-md-4">
+          <div class="fm-search-wrap">
+            <i class="bi bi-search fm-search-icon"></i>
+            <input type="text" class="form-control fm-search-input" id="searchInput"
+              placeholder="Buscar por marca, color, material..." />
+          </div>
         </div>
-        <div class="fm-scanner-wrap" id="scannerContainer">
-          <div id="reader" style="width:100%"></div>
-          <div class="fm-scanner-overlay"></div>
-          <div class="fm-scanner-line"></div>
+        <div class="col-6 col-md-2">
+          <select class="form-select fm-select" id="filterMaterial">
+            <option value="">Todos los materiales</option>
+            <option>PLA</option>
+            <option>PETG</option>
+            <option>ABS</option>
+            <option>TPU</option>
+            <option>ASA</option>
+            <option>Nylon</option>
+            <option>Resina</option>
+            <option>Otro</option>
+          </select>
         </div>
-        <div class="mt-3">
-          <label class="form-label text-muted small">O ingresa el código manualmente:</label>
-          <div class="input-group">
-            <input type="text" class="form-control fm-input" id="manualBarcodeInput" placeholder="Código de barras..." />
-            <button class="btn btn-outline-primary" id="manualBarcodeBtn">
-              <i class="bi bi-arrow-right-circle"></i> Usar
+        <div class="col-6 col-md-2">
+          <select class="form-select fm-select" id="filterStatus">
+            <option value="">Todos los estados</option>
+            <option value="new">Nuevo</option>
+            <option value="in-use">En uso</option>
+            <option value="stored">Almacenado</option>
+            <option value="empty">Vacío</option>
+          </select>
+        </div>
+        <div class="col-6 col-md-2">
+          <select class="form-select fm-select" id="filterBrand">
+            <option value="">Todas las marcas</option>
+          </select>
+        </div>
+        <div class="col-6 col-md-2">
+          <div class="btn-group w-100" role="group">
+            <button type="button" class="btn fm-view-btn active" id="viewGrid" title="Vista cuadrícula">
+              <i class="bi bi-grid-3x3-gap"></i>
+            </button>
+            <button type="button" class="btn fm-view-btn" id="viewList" title="Vista lista">
+              <i class="bi bi-list-ul"></i>
             </button>
           </div>
         </div>
       </div>
     </div>
-  </div>
-</div>
 
-<!-- ══════════════════════════════ ADD / EDIT MODAL ══════════════════════════════ -->
-<div class="modal fade" id="filamentModal" tabindex="-1" aria-labelledby="filamentModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable">
-    <div class="modal-content fm-modal">
-      <div class="modal-header border-0">
-        <h5 class="modal-title fw-bold" id="filamentModalLabel">
-          <i class="bi bi-layers-half me-2 text-primary"></i>Nuevo Filamento
-        </h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+    <!-- ── LOADING ── -->
+    <div id="loadingOverlay" class="fm-loading">
+      <div class="fm-spinner"></div>
+      <p class="mt-3 text-muted">Cargando inventario...</p>
+    </div>
+
+    <!-- ── EMPTY STATE ── -->
+    <div id="emptyState" class="fm-empty-state d-none">
+      <div class="fm-empty-icon"><i class="bi bi-box-seam"></i></div>
+      <h4>Sin filamentos registrados</h4>
+      <p class="text-muted">Agrega tu primer rollo escaneando un código de barras o usando el botón de agregar.</p>
+      <button class="btn fm-btn-add mt-2" onclick="document.getElementById('openAddBtn').click()">
+        <i class="bi bi-plus-lg me-1"></i>Agregar filamento
+      </button>
+    </div>
+
+    <!-- ── GRID VIEW ── -->
+    <div class="row g-3" id="filamentsGrid"></div>
+
+    <!-- ── LIST VIEW ── -->
+    <div class="fm-list-wrap d-none" id="filamentsList">
+      <table class="table fm-table align-middle mb-0">
+        <thead>
+          <tr>
+            <th>Color</th>
+            <th>Marca / Material</th>
+            <th>Diámetro</th>
+            <th>Peso restante</th>
+            <th>Estado</th>
+            <th>Ubicación</th>
+            <th class="text-center">Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="filamentsListBody"></tbody>
+      </table>
+    </div>
+
+  </main>
+
+  <!-- ══════════════════════════════ SCANNER MODAL ══════════════════════════════ -->
+  <div class="modal fade" id="scannerModal" tabindex="-1" aria-labelledby="scannerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content fm-modal">
+        <div class="modal-header border-0 pb-0">
+          <h5 class="modal-title fw-bold" id="scannerModalLabel">
+            <i class="bi bi-upc-scan me-2 text-primary"></i>Escanear Código de Barras
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div id="scannerError" class="alert alert-danger d-none"></div>
+          <div id="scannerSuccessBanner" class="alert alert-success d-none">
+            <i class="bi bi-check-circle me-2"></i><span id="scanResultText"></span>
+          </div>
+          <div class="fm-scanner-wrap" id="scannerContainer">
+            <div id="reader" style="width:100%"></div>
+            <div class="fm-scanner-overlay"></div>
+            <div class="fm-scanner-line"></div>
+          </div>
+          <div class="mt-3">
+            <label class="form-label text-muted small">O ingresa el código manualmente:</label>
+            <div class="input-group">
+              <input type="text" class="form-control fm-input" id="manualBarcodeInput"
+                placeholder="Código de barras..." />
+              <button class="btn btn-outline-primary" id="manualBarcodeBtn">
+                <i class="bi bi-arrow-right-circle"></i> Usar
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="modal-body">
-        <form id="filamentForm" novalidate>
-          <input type="hidden" id="filamentId" />
-          <input type="hidden" id="filamentBarcode" />
+    </div>
+  </div>
 
-          <!-- Sección: Identificación -->
-          <div class="fm-form-section">
-            <div class="fm-form-section-title"><i class="bi bi-tag me-2"></i>Identificación</div>
-            <div class="row g-3">
-              <div class="col-md-4">
-                <label class="form-label">Código de barras</label>
-                <div class="input-group">
-                  <input type="text" class="form-control fm-input" id="formBarcode" placeholder="Escanear o ingresar..." readonly />
-                  <button class="btn btn-outline-secondary" type="button" id="formScanBtn" title="Escanear">
-                    <i class="bi bi-upc-scan"></i>
-                  </button>
-                </div>
-              </div>
-              <div class="col-md-4">
-                <label class="form-label">Marca / Fabricante <span class="text-danger">*</span></label>
-                <input type="text" class="form-control fm-input" id="formBrand" placeholder="ej. Bambu Lab, Polymaker..." list="brandList" required />
-                <datalist id="brandList">
-                  <option value="Bambu Lab"><option value="Polymaker"><option value="Hatchbox">
-                  <option value="eSUN"><option value="Prusament"><option value="Sunlu">
-                  <option value="Overture"><option value="FormFutura"><option value="ColorFabb">
-                  <option value="MatterHackers"><option value="Protopasta">
-                </datalist>
-              </div>
-              <div class="col-md-4">
-                <label class="form-label">Material <span class="text-danger">*</span></label>
-                <select class="form-select fm-select" id="formMaterial" required>
-                  <option value="">Seleccionar...</option>
-                  <option>PLA</option><option>PLA+</option><option>PLA-CF</option>
-                  <option>PETG</option><option>PETG-CF</option>
-                  <option>ABS</option><option>ASA</option>
-                  <option>TPU</option><option>TPE</option>
-                  <option>Nylon</option><option>Nylon-CF</option>
-                  <option>PC</option><option>HIPS</option><option>PVA</option>
-                  <option>Resina</option><option>Silk PLA</option>
-                  <option>PLA Matte</option><option>Otro</option>
-                </select>
-              </div>
-            </div>
-          </div>
+  <!-- ══════════════════════════════ ADD / EDIT MODAL ══════════════════════════════ -->
+  <div class="modal fade" id="filamentModal" tabindex="-1" aria-labelledby="filamentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl modal-dialog-scrollable">
+      <div class="modal-content fm-modal">
+        <div class="modal-header border-0">
+          <h5 class="modal-title fw-bold" id="filamentModalLabel">
+            <i class="bi bi-layers-half me-2 text-primary"></i>Nuevo Filamento
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="filamentForm" novalidate>
+            <input type="hidden" id="filamentId" />
+            <input type="hidden" id="filamentBarcode" />
 
-          <!-- Sección: Color -->
-          <div class="fm-form-section">
-            <div class="fm-form-section-title"><i class="bi bi-palette me-2"></i>Color</div>
-            <div class="row g-3">
-              <div class="col-md-6">
-                <label class="form-label">Nombre del color <span class="text-danger">*</span></label>
-                <input type="text" class="form-control fm-input" id="formColor" placeholder="ej. Rojo Carmesí, Galaxy Black..." required />
-              </div>
-              <div class="col-md-3">
-                <label class="form-label">Color (picker)</label>
-                <div class="input-group">
-                  <input type="color" class="form-control form-control-color fm-color-picker" id="formColorHex" value="#FFFFFF" title="Seleccionar color" />
-                  <input type="text" class="form-control fm-input" id="formColorHexText" placeholder="#FFFFFF" maxlength="7" />
-                </div>
-              </div>
-              <div class="col-md-3 d-flex align-items-end">
-                <div class="fm-color-preview-wrap w-100">
-                  <div class="fm-color-preview" id="colorPreview"></div>
-                  <span class="small text-muted">Vista previa</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Sección: Peso y dimensiones -->
-          <div class="fm-form-section">
-            <div class="fm-form-section-title"><i class="bi bi-rulers me-2"></i>Peso y Dimensiones</div>
-            <div class="row g-3">
-              <div class="col-md-3">
-                <label class="form-label">Diámetro (mm)</label>
-                <select class="form-select fm-select" id="formDiameter">
-                  <option value="1.75" selected>1.75 mm</option>
-                  <option value="2.85">2.85 mm</option>
-                  <option value="3.00">3.00 mm</option>
-                </select>
-              </div>
-              <div class="col-md-3">
-                <label class="form-label">Peso total (g)</label>
-                <input type="number" class="form-control fm-input" id="formWeightTotal" value="1000" min="50" max="10000" step="50" />
-              </div>
-              <div class="col-md-3">
-                <label class="form-label">Peso restante (g)</label>
-                <input type="number" class="form-control fm-input" id="formWeightRemaining" value="1000" min="0" max="10000" step="10" />
-              </div>
-              <div class="col-md-3 d-flex align-items-end pb-1">
-                <div class="w-100">
-                  <div class="d-flex justify-content-between mb-1">
-                    <small class="text-muted">Nivel del rollo</small>
-                    <small class="fw-bold" id="weightPct">100%</small>
-                  </div>
-                  <div class="progress fm-progress">
-                    <div class="progress-bar fm-progress-bar" id="weightBar" style="width:100%"></div>
+            <!-- Sección: Identificación -->
+            <div class="fm-form-section">
+              <div class="fm-form-section-title"><i class="bi bi-tag me-2"></i>Identificación</div>
+              <div class="row g-3">
+                <div class="col-md-4">
+                  <label class="form-label">Código de barras</label>
+                  <div class="input-group">
+                    <input type="text" class="form-control fm-input" id="formBarcode"
+                      placeholder="Escanear o ingresar..." readonly />
+                    <button class="btn btn-outline-secondary" type="button" id="formScanBtn" title="Escanear">
+                      <i class="bi bi-upc-scan"></i>
+                    </button>
                   </div>
                 </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Sección: Temperaturas -->
-          <div class="fm-form-section">
-            <div class="fm-form-section-title"><i class="bi bi-thermometer-half me-2"></i>Temperaturas de impresión</div>
-            <div class="row g-3">
-              <div class="col-md-3">
-                <label class="form-label">Temp. Extrusor Min (°C)</label>
-                <input type="number" class="form-control fm-input" id="formPrintTempMin" value="190" min="100" max="350" />
-              </div>
-              <div class="col-md-3">
-                <label class="form-label">Temp. Extrusor Max (°C)</label>
-                <input type="number" class="form-control fm-input" id="formPrintTempMax" value="220" min="100" max="350" />
-              </div>
-              <div class="col-md-3">
-                <label class="form-label">Temp. Cama Min (°C)</label>
-                <input type="number" class="form-control fm-input" id="formBedTempMin" value="50" min="0" max="150" />
-              </div>
-              <div class="col-md-3">
-                <label class="form-label">Temp. Cama Max (°C)</label>
-                <input type="number" class="form-control fm-input" id="formBedTempMax" value="60" min="0" max="150" />
-              </div>
-            </div>
-          </div>
-
-          <!-- Sección: Gestión -->
-          <div class="fm-form-section">
-            <div class="fm-form-section-title"><i class="bi bi-clipboard-data me-2"></i>Gestión y Estado</div>
-            <div class="row g-3">
-              <div class="col-md-3">
-                <label class="form-label">Estado</label>
-                <select class="form-select fm-select" id="formStatus">
-                  <option value="new">🟢 Nuevo</option>
-                  <option value="in-use">🟡 En uso</option>
-                  <option value="stored">🔵 Almacenado</option>
-                  <option value="empty">🔴 Vacío</option>
-                </select>
-              </div>
-              <div class="col-md-3">
-                <label class="form-label">Precio (USD)</label>
-                <input type="number" class="form-control fm-input" id="formPrice" value="0" min="0" step="0.01" />
-              </div>
-              <div class="col-md-3">
-                <label class="form-label">Fecha de compra</label>
-                <input type="date" class="form-control fm-input" id="formPurchaseDate" />
-              </div>
-              <div class="col-md-3">
-                <label class="form-label">Fecha de apertura</label>
-                <input type="date" class="form-control fm-input" id="formOpenedDate" />
-              </div>
-              <div class="col-md-6">
-                <label class="form-label">Ubicación de almacenamiento</label>
-                <input type="text" class="form-control fm-input" id="formStorageLocation" placeholder="ej. Estante A2, Caja Seca..." />
-              </div>
-              <div class="col-md-3 d-flex align-items-center gap-2 mt-md-4 pt-md-2">
-                <div class="form-check form-switch">
-                  <input class="form-check-input" type="checkbox" role="switch" id="formDryingRequired" />
-                  <label class="form-check-label" for="formDryingRequired">Requiere secado</label>
+                <div class="col-md-4">
+                  <label class="form-label">Marca / Fabricante <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control fm-input" id="formBrand"
+                    placeholder="ej. Bambu Lab, Polymaker..." list="brandList" required />
+                  <datalist id="brandList">
+                    <option value="Bambu Lab">
+                    <option value="Polymaker">
+                    <option value="Hatchbox">
+                    <option value="eSUN">
+                    <option value="Prusament">
+                    <option value="Sunlu">
+                    <option value="Overture">
+                    <option value="FormFutura">
+                    <option value="ColorFabb">
+                    <option value="MatterHackers">
+                    <option value="Protopasta">
+                  </datalist>
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Material <span class="text-danger">*</span></label>
+                  <select class="form-select fm-select" id="formMaterial" required>
+                    <option value="">Seleccionar...</option>
+                    <option>PLA</option>
+                    <option>PLA+</option>
+                    <option>PLA-CF</option>
+                    <option>PETG</option>
+                    <option>PETG-CF</option>
+                    <option>ABS</option>
+                    <option>ASA</option>
+                    <option>TPU</option>
+                    <option>TPE</option>
+                    <option>Nylon</option>
+                    <option>Nylon-CF</option>
+                    <option>PC</option>
+                    <option>HIPS</option>
+                    <option>PVA</option>
+                    <option>Resina</option>
+                    <option>Silk PLA</option>
+                    <option>PLA Matte</option>
+                    <option>Otro</option>
+                  </select>
                 </div>
               </div>
             </div>
-          </div>
 
-          <!-- Sección: Notas -->
-          <div class="fm-form-section border-0">
-            <div class="fm-form-section-title"><i class="bi bi-sticky me-2"></i>Notas</div>
-            <textarea class="form-control fm-input" id="formNotes" rows="3" placeholder="Notas adicionales, advertencias, experimentos..."></textarea>
-          </div>
+            <!-- Sección: Color -->
+            <div class="fm-form-section">
+              <div class="fm-form-section-title"><i class="bi bi-palette me-2"></i>Color</div>
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label">Nombre del color <span class="text-danger">*</span></label>
+                  <input type="text" class="form-control fm-input" id="formColor"
+                    placeholder="ej. Rojo Carmesí, Galaxy Black..." required />
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">Color (picker)</label>
+                  <div class="input-group">
+                    <input type="color" class="form-control form-control-color fm-color-picker" id="formColorHex"
+                      value="#FFFFFF" title="Seleccionar color" />
+                    <input type="text" class="form-control fm-input" id="formColorHexText" placeholder="#FFFFFF"
+                      maxlength="7" />
+                  </div>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                  <div class="fm-color-preview-wrap w-100">
+                    <div class="fm-color-preview" id="colorPreview"></div>
+                    <span class="small text-muted">Vista previa</span>
+                  </div>
+                </div>
+              </div>
+            </div>
 
-        </form>
-      </div>
-      <div class="modal-footer border-0 pt-0">
-        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-        <button type="button" class="btn fm-btn-add" id="saveFilamentBtn">
-          <i class="bi bi-floppy me-1"></i><span id="saveBtnText">Guardar</span>
-        </button>
+            <!-- Sección: Peso y dimensiones -->
+            <div class="fm-form-section">
+              <div class="fm-form-section-title"><i class="bi bi-rulers me-2"></i>Peso y Dimensiones</div>
+              <div class="row g-3">
+                <div class="col-md-3">
+                  <label class="form-label">Diámetro (mm)</label>
+                  <select class="form-select fm-select" id="formDiameter">
+                    <option value="1.75" selected>1.75 mm</option>
+                    <option value="2.85">2.85 mm</option>
+                    <option value="3.00">3.00 mm</option>
+                  </select>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">Peso total (g)</label>
+                  <input type="number" class="form-control fm-input" id="formWeightTotal" value="1000" min="50"
+                    max="10000" step="50" />
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">Peso restante (g)</label>
+                  <input type="number" class="form-control fm-input" id="formWeightRemaining" value="1000" min="0"
+                    max="10000" step="10" />
+                </div>
+                <div class="col-md-3 d-flex align-items-end pb-1">
+                  <div class="w-100">
+                    <div class="d-flex justify-content-between mb-1">
+                      <small class="text-muted">Nivel del rollo</small>
+                      <small class="fw-bold" id="weightPct">100%</small>
+                    </div>
+                    <div class="progress fm-progress">
+                      <div class="progress-bar fm-progress-bar" id="weightBar" style="width:100%"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Sección: Temperaturas -->
+            <div class="fm-form-section">
+              <div class="fm-form-section-title"><i class="bi bi-thermometer-half me-2"></i>Temperaturas de impresión
+              </div>
+              <div class="row g-3">
+                <div class="col-md-3">
+                  <label class="form-label">Temp. Extrusor Min (°C)</label>
+                  <input type="number" class="form-control fm-input" id="formPrintTempMin" value="190" min="100"
+                    max="350" />
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">Temp. Extrusor Max (°C)</label>
+                  <input type="number" class="form-control fm-input" id="formPrintTempMax" value="220" min="100"
+                    max="350" />
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">Temp. Cama Min (°C)</label>
+                  <input type="number" class="form-control fm-input" id="formBedTempMin" value="50" min="0" max="150" />
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">Temp. Cama Max (°C)</label>
+                  <input type="number" class="form-control fm-input" id="formBedTempMax" value="60" min="0" max="150" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Sección: Gestión -->
+            <div class="fm-form-section">
+              <div class="fm-form-section-title"><i class="bi bi-clipboard-data me-2"></i>Gestión y Estado</div>
+              <div class="row g-3">
+                <div class="col-md-3">
+                  <label class="form-label">Estado</label>
+                  <select class="form-select fm-select" id="formStatus">
+                    <option value="new">🟢 Nuevo</option>
+                    <option value="in-use">🟡 En uso</option>
+                    <option value="stored">🔵 Almacenado</option>
+                    <option value="empty">🔴 Vacío</option>
+                  </select>
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">Precio (USD)</label>
+                  <input type="number" class="form-control fm-input" id="formPrice" value="0" min="0" step="0.01" />
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">Fecha de compra</label>
+                  <input type="date" class="form-control fm-input" id="formPurchaseDate" />
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label">Fecha de apertura</label>
+                  <input type="date" class="form-control fm-input" id="formOpenedDate" />
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Ubicación de almacenamiento</label>
+                  <input type="text" class="form-control fm-input" id="formStorageLocation"
+                    placeholder="ej. Estante A2, Caja Seca..." />
+                </div>
+                <div class="col-md-3 d-flex align-items-center gap-2 mt-md-4 pt-md-2">
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" role="switch" id="formDryingRequired" />
+                    <label class="form-check-label" for="formDryingRequired">Requiere secado</label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Sección: Notas -->
+            <div class="fm-form-section border-0">
+              <div class="fm-form-section-title"><i class="bi bi-sticky me-2"></i>Notas</div>
+              <textarea class="form-control fm-input" id="formNotes" rows="3"
+                placeholder="Notas adicionales, advertencias, experimentos..."></textarea>
+            </div>
+
+          </form>
+        </div>
+        <div class="modal-footer border-0 pt-0">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn fm-btn-add" id="saveFilamentBtn">
+            <i class="bi bi-floppy me-1"></i><span id="saveBtnText">Guardar</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>
-</div>
 
-<!-- ══════════════════════════════ DETAIL MODAL ══════════════════════════════ -->
-<div class="modal fade" id="detailModal" tabindex="-1" aria-labelledby="detailModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content fm-modal" id="detailModalContent">
-    </div>
-  </div>
-</div>
-
-<!-- ══════════════════════════════ DELETE CONFIRM MODAL ══════════════════════════════ -->
-<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content fm-modal">
-      <div class="modal-header border-0">
-        <h5 class="modal-title text-danger" id="deleteModalLabel">
-          <i class="bi bi-trash3 me-2"></i>Eliminar filamento
-        </h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <p>¿Estás seguro de que deseas eliminar este filamento?</p>
-        <div class="fm-delete-preview" id="deletePreview"></div>
-        <p class="text-muted small mt-2">Esta acción no se puede deshacer.</p>
-      </div>
-      <div class="modal-footer border-0">
-        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-        <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
-          <i class="bi bi-trash3 me-1"></i>Eliminar
-        </button>
+  <!-- ══════════════════════════════ DETAIL MODAL ══════════════════════════════ -->
+  <div class="modal fade" id="detailModal" tabindex="-1" aria-labelledby="detailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content fm-modal" id="detailModalContent">
       </div>
     </div>
   </div>
-</div>
 
-<!-- ══════════════════════════════ BARCODE MATCH MODAL ══════════════════════════════ -->
-<div class="modal fade" id="barcodeMatchModal" tabindex="-1" aria-labelledby="barcodeMatchLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content fm-modal">
-      <div class="modal-header border-0 pb-1">
-        <h5 class="modal-title fw-bold" id="barcodeMatchLabel">
-          <i class="bi bi-upc-scan me-2 text-primary"></i>Código reconocido
-        </h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <!-- Preview del filamento encontrado -->
-        <div class="fm-barcode-match-preview mb-3" id="barcodeMatchPreview"></div>
-        <!-- Bobinas del mismo código -->
-        <div id="barcodeMatchSiblings" class="mb-3"></div>
-        <p class="text-muted small mb-0">¿Qué deseas hacer?</p>
-      </div>
-      <div class="modal-footer border-0 flex-column gap-2 pt-0">
-        <button type="button" class="btn fm-btn-add w-100" id="bmAddNewSpool">
-          <i class="bi bi-plus-circle me-2"></i>Agregar nueva bobina igual
-          <small class="d-block opacity-75" style="font-size:0.72rem">Copia todos los datos · peso y estado como nuevo</small>
-        </button>
-        <button type="button" class="btn w-100" id="bmEditExisting"
-          style="background:var(--fm-surface-3);border:1px solid var(--fm-border);color:var(--fm-text)">
-          <i class="bi bi-pencil me-2"></i>Editar la bobina existente
-        </button>
-        <button type="button" class="btn btn-outline-secondary w-100" data-bs-dismiss="modal">
-          Cancelar
-        </button>
+  <!-- ══════════════════════════════ DELETE CONFIRM MODAL ══════════════════════════════ -->
+  <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content fm-modal">
+        <div class="modal-header border-0">
+          <h5 class="modal-title text-danger" id="deleteModalLabel">
+            <i class="bi bi-trash3 me-2"></i>Eliminar filamento
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p>¿Estás seguro de que deseas eliminar este filamento?</p>
+          <div class="fm-delete-preview" id="deletePreview"></div>
+          <p class="text-muted small mt-2">Esta acción no se puede deshacer.</p>
+        </div>
+        <div class="modal-footer border-0">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+            <i class="bi bi-trash3 me-1"></i>Eliminar
+          </button>
+        </div>
       </div>
     </div>
   </div>
-</div>
 
-<!-- ══════════════════════════════ TOAST ══════════════════════════════ -->
-<div class="toast-container position-fixed bottom-0 end-0 p-3">
-  <div id="appToast" class="toast align-items-center border-0 fm-toast" role="alert" aria-live="assertive" aria-atomic="true">
-    <div class="d-flex">
-      <div class="toast-body" id="toastBody">
-        <i class="bi bi-check-circle me-2"></i>Acción completada.
+  <!-- ══════════════════════════════ BARCODE MATCH MODAL ══════════════════════════════ -->
+  <div class="modal fade" id="barcodeMatchModal" tabindex="-1" aria-labelledby="barcodeMatchLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content fm-modal">
+        <div class="modal-header border-0 pb-1">
+          <h5 class="modal-title fw-bold" id="barcodeMatchLabel">
+            <i class="bi bi-upc-scan me-2 text-primary"></i>Código reconocido
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <!-- Preview del filamento encontrado -->
+          <div class="fm-barcode-match-preview mb-3" id="barcodeMatchPreview"></div>
+          <!-- Bobinas del mismo código -->
+          <div id="barcodeMatchSiblings" class="mb-3"></div>
+          <p class="text-muted small mb-0">¿Qué deseas hacer?</p>
+        </div>
+        <div class="modal-footer border-0 flex-column gap-2 pt-0">
+          <button type="button" class="btn fm-btn-add w-100" id="bmAddNewSpool">
+            <i class="bi bi-plus-circle me-2"></i>Agregar nueva bobina igual
+            <small class="d-block opacity-75" style="font-size:0.72rem">Copia todos los datos · peso y estado como
+              nuevo</small>
+          </button>
+          <button type="button" class="btn w-100" id="bmEditExisting"
+            style="background:var(--fm-surface-3);border:1px solid var(--fm-border);color:var(--fm-text)">
+            <i class="bi bi-pencil me-2"></i>Editar la bobina existente
+          </button>
+          <button type="button" class="btn btn-outline-secondary w-100" data-bs-dismiss="modal">
+            Cancelar
+          </button>
+        </div>
       </div>
-      <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
     </div>
   </div>
-</div>
 
-<!-- ══════════════════════════════ SCRIPTS ══════════════════════════════ -->
-<!-- html5-qrcode for barcode scanning -->
-<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-<!-- Bootstrap 5 JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<!-- App modules (order matters) -->
-<script src="js/api.js"></script>
-<script src="js/ui.js"></script>
-<script src="js/app.js"></script>
+  <!-- ══════════════════════════════ TOAST ══════════════════════════════ -->
+  <div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div id="appToast" class="toast align-items-center border-0 fm-toast" role="alert" aria-live="assertive"
+      aria-atomic="true">
+      <div class="d-flex">
+        <div class="toast-body" id="toastBody">
+          <i class="bi bi-check-circle me-2"></i>Acción completada.
+        </div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════ SCRIPTS ══════════════════════════════ -->
+  <!-- html5-qrcode for barcode scanning -->
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <!-- Bootstrap 5 JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- App modules (order matters) -->
+  <script src="js/api.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/app.js"></script>
 </body>
+
 </html>
