@@ -4,21 +4,26 @@
 
 // ── State ──────────────────────────────────────────────────────
 let allFilaments = [];
-let currentView  = 'grid';   // 'grid' | 'list'
+let currentView  = 'grid';
 let deleteTargetId = null;
 let html5QrScanner = null;
 let scannerActive  = false;
 
 // ── Bootstrap modal instances ───────────────────────────────────
-let bsScannerModal, bsFilamentModal, bsDetailModal, bsDeleteModal, bsToast;
+let bsScannerModal, bsFilamentModal, bsDetailModal, bsDeleteModal,
+    bsBarcodeMatchModal, bsToast;
 
 // ── Init ───────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-  bsScannerModal  = new bootstrap.Modal(document.getElementById('scannerModal'));
-  bsFilamentModal = new bootstrap.Modal(document.getElementById('filamentModal'));
-  bsDetailModal   = new bootstrap.Modal(document.getElementById('detailModal'));
-  bsDeleteModal   = new bootstrap.Modal(document.getElementById('deleteModal'));
-  bsToast         = new bootstrap.Toast(document.getElementById('appToast'), { delay: 3000 });
+  bsScannerModal      = new bootstrap.Modal(document.getElementById('scannerModal'));
+  bsFilamentModal     = new bootstrap.Modal(document.getElementById('filamentModal'));
+  bsDetailModal       = new bootstrap.Modal(document.getElementById('detailModal'));
+  bsDeleteModal       = new bootstrap.Modal(document.getElementById('deleteModal'));
+  bsBarcodeMatchModal = new bootstrap.Modal(document.getElementById('barcodeMatchModal'));
+  bsToast             = new bootstrap.Toast(document.getElementById('appToast'), { delay: 3000 });
+
+  // Expose bsDetailModal globally for inline onclick in detail render
+  window.bsDetailModal = bsDetailModal;
 
   bindEvents();
   loadFilaments();
@@ -26,21 +31,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ── Bind Events ────────────────────────────────────────────────
 function bindEvents() {
-  // Navbar buttons
-  document.getElementById('openScannerBtn').addEventListener('click', UI.openScanner);
+  document.getElementById('openScannerBtn').addEventListener('click', () => UI.openScanner());
   document.getElementById('openAddBtn').addEventListener('click', () => UI.openAdd());
 
-  // Filters & search
   document.getElementById('searchInput').addEventListener('input', renderFiltered);
   document.getElementById('filterMaterial').addEventListener('change', renderFiltered);
   document.getElementById('filterStatus').addEventListener('change', renderFiltered);
   document.getElementById('filterBrand').addEventListener('change', renderFiltered);
 
-  // View toggles
   document.getElementById('viewGrid').addEventListener('click', () => switchView('grid'));
   document.getElementById('viewList').addEventListener('click', () => switchView('list'));
 
-  // Scanner modal events
+  // Scanner modal
   document.getElementById('scannerModal').addEventListener('hidden.bs.modal', stopScanner);
   document.getElementById('scannerModal').addEventListener('shown.bs.modal', startScanner);
   document.getElementById('manualBarcodeBtn').addEventListener('click', handleManualBarcode);
@@ -49,13 +51,17 @@ function bindEvents() {
   });
   document.getElementById('formScanBtn').addEventListener('click', () => {
     bsFilamentModal.hide();
-    setTimeout(() => { UI.openScanner(true); }, 400);
+    setTimeout(() => { UI._afterScanReturnToForm = true; UI.openScanner(); }, 400);
   });
 
-  // Save button
+  // Barcode match modal buttons
+  document.getElementById('bmAddNewSpool').addEventListener('click', onBarcodeMatchAddNew);
+  document.getElementById('bmEditExisting').addEventListener('click', onBarcodeMatchEdit);
+
+  // Form save
   document.getElementById('saveFilamentBtn').addEventListener('click', saveFilament);
 
-  // Confirm delete
+  // Delete confirm
   document.getElementById('confirmDeleteBtn').addEventListener('click', confirmDelete);
 
   // Color picker sync
@@ -71,13 +77,12 @@ function bindEvents() {
     }
   });
 
-  // Weight progress in form
-  ['formWeightTotal','formWeightRemaining'].forEach(id => {
-    document.getElementById(id).addEventListener('input', updateWeightBar);
-  });
+  // Weight bar
+  ['formWeightTotal','formWeightRemaining'].forEach(id =>
+    document.getElementById(id).addEventListener('input', updateWeightBar));
 }
 
-// ── Load filaments ─────────────────────────────────────────────
+// ── Load ───────────────────────────────────────────────────────
 async function loadFilaments() {
   showLoading(true);
   try {
@@ -92,7 +97,7 @@ async function loadFilaments() {
   }
 }
 
-// ── Render filtered list ───────────────────────────────────────
+// ── Render ─────────────────────────────────────────────────────
 function renderFiltered() {
   const q  = document.getElementById('searchInput').value.toLowerCase();
   const fm = document.getElementById('filterMaterial').value;
@@ -108,34 +113,31 @@ function renderFiltered() {
     return matchQ && matchFm && matchFs && matchFb;
   });
 
-  const grid = document.getElementById('filamentsGrid');
-  const list = document.getElementById('filamentsListBody');
+  // Build spool count map from ALL filaments (not just filtered) for accurate badges
+  const spoolCountMap = buildSpoolCountMap(allFilaments);
+
+  const grid  = document.getElementById('filamentsGrid');
+  const list  = document.getElementById('filamentsListBody');
   const empty = document.getElementById('emptyState');
 
   if (filtered.length === 0) {
-    grid.innerHTML = '';
-    list.innerHTML = '';
+    grid.innerHTML = ''; list.innerHTML = '';
     empty.classList.remove('d-none');
   } else {
     empty.classList.add('d-none');
-    grid.innerHTML = filtered.map(renderCard).join('');
-    list.innerHTML = filtered.map(renderRow).join('');
+    grid.innerHTML = filtered.map(f => renderCard(f, spoolCountMap)).join('');
+    list.innerHTML = filtered.map(f => renderRow(f, spoolCountMap)).join('');
   }
-
   updateStats();
 }
 
 // ── Stats ──────────────────────────────────────────────────────
 function updateStats() {
-  const total  = allFilaments.length;
-  const newC   = allFilaments.filter(f=>f.status==='new').length;
-  const inUse  = allFilaments.filter(f=>f.status==='in-use').length;
-  const empty  = allFilaments.filter(f=>f.status==='empty').length;
-  document.getElementById('statTotal').textContent  = total;
-  document.getElementById('statNew').textContent    = newC;
-  document.getElementById('statInUse').textContent  = inUse;
-  document.getElementById('statEmpty').textContent  = empty;
-  document.getElementById('navCountNum').textContent = total;
+  document.getElementById('statTotal').textContent  = allFilaments.length;
+  document.getElementById('statNew').textContent    = allFilaments.filter(f=>f.status==='new').length;
+  document.getElementById('statInUse').textContent  = allFilaments.filter(f=>f.status==='in-use').length;
+  document.getElementById('statEmpty').textContent  = allFilaments.filter(f=>f.status==='empty').length;
+  document.getElementById('navCountNum').textContent = allFilaments.length;
 }
 
 // ── Brand filter ───────────────────────────────────────────────
@@ -164,22 +166,33 @@ function switchView(view) {
 // ── UI namespace ───────────────────────────────────────────────
 const UI = {
 
-  openScanner(fromForm) {
+  _afterScanReturnToForm: false,
+  _barcodeMatchRef: null,   // filament found when scanning known barcode
+
+  openScanner() {
     document.getElementById('scannerSuccessBanner').classList.add('d-none');
     document.getElementById('scannerError').classList.add('d-none');
     document.getElementById('manualBarcodeInput').value = '';
     bsScannerModal.show();
-    if (fromForm) UI._afterScanReturnToForm = true;
   },
 
-  _afterScanReturnToForm: false,
-
-  openAdd(barcodeValue) {
+  openAdd(barcodeValue, prefillData) {
     document.getElementById('filamentModalLabel').innerHTML =
       '<i class="bi bi-layers-half me-2 text-primary"></i>Nuevo Filamento';
     document.getElementById('saveBtnText').textContent = 'Guardar';
     document.getElementById('filamentId').value = '';
     resetForm();
+    if (prefillData) {
+      // Pre-fill all fields from a template filament but reset per-spool fields
+      populateForm({
+        ...prefillData,
+        weightRemaining: prefillData.weightTotal, // assume full spool
+        status: 'new',
+        openedDate: '',
+        purchaseDate: '',
+        notes: ''
+      });
+    }
     if (barcodeValue) {
       document.getElementById('formBarcode').value = barcodeValue;
       document.getElementById('filamentBarcode').value = barcodeValue;
@@ -216,8 +229,82 @@ const UI = {
         <small class="text-muted">${escHtml(f.brand)} · ${escHtml(f.material)}</small>
       </div>`;
     bsDeleteModal.show();
+  },
+
+  /**
+   * Clone a spool: open the add form pre-filled with same data,
+   * reset per-spool fields (weight full, status new, dates empty).
+   */
+  cloneSpool(id) {
+    const f = allFilaments.find(x => x.id === id);
+    if (!f) return;
+    UI.openAdd(f.barcode || null, f);
+    showToast('Datos copiados. Ajusta lo que necesites.', 'success');
   }
 };
+
+// ── Barcode match modal ─────────────────────────────────────────
+/**
+ * When a scanned barcode matches an existing filament,
+ * show the match modal instead of opening the form directly.
+ */
+function showBarcodeMatchModal(code, matches) {
+  const primary = matches[0]; // most recently updated
+  UI._barcodeMatchRef = primary;
+
+  // Preview card
+  const pct = getWeightPct(primary);
+  document.getElementById('barcodeMatchPreview').innerHTML = `
+    <div class="fm-color-dot" style="background:${primary.colorHex || '#fff'}"></div>
+    <div class="flex-grow-1">
+      <div class="fw-bold">${escHtml(primary.brand)} ${escHtml(primary.material)}</div>
+      <div class="text-muted small">${escHtml(primary.color)} · ${primary.diameter}mm · ${primary.weightTotal}g</div>
+      <div class="d-flex gap-2 mt-1 align-items-center flex-wrap">
+        ${getStatusBadge(primary.status)}
+        <span class="text-muted small">${primary.printTempMin}–${primary.printTempMax}°C extrusor</span>
+      </div>
+    </div>
+    <div class="text-end">
+      <div class="fw-bold" style="font-size:1rem">${pct}%</div>
+      <div class="text-muted" style="font-size:0.72rem">restante</div>
+    </div>`;
+
+  // Siblings list (other spools of the same barcode)
+  const siblingsEl = document.getElementById('barcodeMatchSiblings');
+  if (matches.length > 1) {
+    const rows = matches.map(f => {
+      const p = getWeightPct(f);
+      return `<div class="fm-match-spool-item" onclick="bsBarcodeMatchModal.hide();setTimeout(()=>UI.openDetail('${f.id}'),350)">
+        <span>
+          <span class="fm-color-dot me-2" style="background:${f.colorHex};vertical-align:middle;width:12px;height:12px;display:inline-block;border-radius:50%"></span>
+          ${escHtml(f.color)} — ${getStatusBadge(f.status)}
+        </span>
+        <span class="text-muted small">${f.weightRemaining}g (${p}%)</span>
+      </div>`;
+    }).join('');
+    siblingsEl.innerHTML = `
+      <div class="fm-match-siblings-title">
+        <i class="bi bi-stack me-1"></i>${matches.length} bobinas con este código
+      </div>
+      ${rows}`;
+  } else {
+    siblingsEl.innerHTML = '';
+  }
+
+  bsBarcodeMatchModal.show();
+}
+
+function onBarcodeMatchAddNew() {
+  const f = UI._barcodeMatchRef;
+  bsBarcodeMatchModal.hide();
+  setTimeout(() => UI.openAdd(f.barcode || null, f), 350);
+}
+
+function onBarcodeMatchEdit() {
+  const f = UI._barcodeMatchRef;
+  bsBarcodeMatchModal.hide();
+  setTimeout(() => UI.openEdit(f.id), 350);
+}
 
 // ── Form helpers ───────────────────────────────────────────────
 function resetForm() {
@@ -270,30 +357,26 @@ function updateWeightBar() {
   document.getElementById('weightBar').style.background = color;
 }
 
-// ── Save (create or update) ────────────────────────────────────
+// ── Save ───────────────────────────────────────────────────────
 async function saveFilament() {
-  const form = document.getElementById('filamentForm');
-  const brand = document.getElementById('formBrand').value.trim();
+  const brand    = document.getElementById('formBrand').value.trim();
   const material = document.getElementById('formMaterial').value;
-  const color = document.getElementById('formColor').value.trim();
+  const color    = document.getElementById('formColor').value.trim();
 
   if (!brand || !material || !color) {
-    if (!brand) document.getElementById('formBrand').classList.add('is-invalid');
+    if (!brand)    document.getElementById('formBrand').classList.add('is-invalid');
     if (!material) document.getElementById('formMaterial').classList.add('is-invalid');
-    if (!color) document.getElementById('formColor').classList.add('is-invalid');
+    if (!color)    document.getElementById('formColor').classList.add('is-invalid');
     showToast('Por favor completa los campos requeridos.', 'error');
     return;
   }
-
   ['formBrand','formMaterial','formColor'].forEach(id =>
     document.getElementById(id).classList.remove('is-invalid'));
 
   const id = document.getElementById('filamentId').value;
   const data = {
     barcode:         document.getElementById('formBarcode').value.trim(),
-    brand,
-    material,
-    color,
+    brand, material, color,
     colorHex:        document.getElementById('formColorHex').value,
     diameter:        document.getElementById('formDiameter').value,
     weightTotal:     document.getElementById('formWeightTotal').value,
@@ -320,11 +403,11 @@ async function saveFilament() {
       const updated = await API.update(id, data);
       const idx = allFilaments.findIndex(f=>f.id===id);
       if (idx !== -1) allFilaments[idx] = updated;
-      showToast('Filamento actualizado correctamente.', 'success');
+      showToast('Filamento actualizado.', 'success');
     } else {
       const created = await API.create(data);
       allFilaments.unshift(created);
-      showToast('Filamento agregado correctamente.', 'success');
+      showToast('Filamento agregado.', 'success');
     }
     populateBrandFilter();
     renderFiltered();
@@ -333,7 +416,7 @@ async function saveFilament() {
     showToast('Error al guardar: ' + e.message, 'error');
   } finally {
     btn.disabled = false;
-    btn.innerHTML = '<i class="bi bi-floppy me-1"></i><span id="saveBtnText">' + (id ? 'Actualizar' : 'Guardar') + '</span>';
+    btn.innerHTML = `<i class="bi bi-floppy me-1"></i><span id="saveBtnText">${id ? 'Actualizar' : 'Guardar'}</span>`;
   }
 }
 
@@ -362,12 +445,12 @@ function startScanner() {
   if (scannerActive) return;
   const errEl = document.getElementById('scannerError');
   errEl.classList.add('d-none');
-
   try {
     html5QrScanner = new Html5Qrcode('reader');
     html5QrScanner.start(
       { facingMode: 'environment' },
-      { fps: 15, qrbox: { width: 280, height: 120 }, supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA] },
+      { fps: 15, qrbox: { width: 280, height: 120 },
+        supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA] },
       (decodedText) => onScanSuccess(decodedText),
       () => {}
     ).then(() => { scannerActive = true; })
@@ -389,20 +472,42 @@ function stopScanner() {
   }
 }
 
+/**
+ * Main scan result handler.
+ * - If code matches existing filaments → show match modal.
+ * - If scan was triggered from form (return-to-form mode) → just fill barcode field.
+ * - Otherwise → open add form (blank if no match, prefilled if match).
+ */
 function onScanSuccess(code) {
   stopScanner();
-  document.getElementById('scanResultText').textContent = 'Código detectado: ' + code;
+
+  // Show the green banner
+  document.getElementById('scanResultText').textContent = 'Código: ' + code;
   document.getElementById('scannerSuccessBanner').classList.remove('d-none');
 
   setTimeout(() => {
     bsScannerModal.hide();
+
     setTimeout(() => {
+      // Return-to-form mode: just set the barcode field and reopen form
       if (UI._afterScanReturnToForm) {
         UI._afterScanReturnToForm = false;
         document.getElementById('formBarcode').value = code;
         document.getElementById('filamentBarcode').value = code;
         bsFilamentModal.show();
+        return;
+      }
+
+      // Look up the barcode in existing filaments
+      const matches = allFilaments
+        .filter(f => f.barcode && f.barcode === code)
+        .sort((a,b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+
+      if (matches.length > 0) {
+        // Known barcode → show match modal
+        showBarcodeMatchModal(code, matches);
       } else {
+        // Unknown barcode → open empty add form with barcode pre-filled
         UI.openAdd(code);
       }
     }, 350);
@@ -414,7 +519,7 @@ function handleManualBarcode() {
   if (v) onScanSuccess(v);
 }
 
-// ── Helpers from detail modal ──────────────────────────────────
+// ── Detail modal helpers (called from inline onclick) ──────────
 function closeDetailOpenEdit(id) {
   bsDetailModal.hide();
   setTimeout(() => UI.openEdit(id), 350);
@@ -424,7 +529,7 @@ function closeDetailOpenDelete(id) {
   setTimeout(() => UI.openDelete(id), 350);
 }
 
-// ── UI utils ───────────────────────────────────────────────────
+// ── Misc helpers ───────────────────────────────────────────────
 function showLoading(v) {
   document.getElementById('loadingOverlay').style.display = v ? 'flex' : 'none';
 }

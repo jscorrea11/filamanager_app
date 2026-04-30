@@ -4,9 +4,9 @@
 
 /* ── Status helpers ── */
 const STATUS_MAP = {
-  'new':    { label: 'Nuevo',      icon: 'bi-circle-fill', cls: 'fm-badge-new' },
-  'in-use': { label: 'En uso',     icon: 'bi-printer-fill', cls: 'fm-badge-in-use' },
-  'stored': { label: 'Almacenado', icon: 'bi-archive-fill', cls: 'fm-badge-stored' },
+  'new':    { label: 'Nuevo',      icon: 'bi-circle-fill',       cls: 'fm-badge-new' },
+  'in-use': { label: 'En uso',     icon: 'bi-printer-fill',      cls: 'fm-badge-in-use' },
+  'stored': { label: 'Almacenado', icon: 'bi-archive-fill',      cls: 'fm-badge-stored' },
   'empty':  { label: 'Vacío',      icon: 'bi-slash-circle-fill', cls: 'fm-badge-empty' }
 };
 
@@ -31,16 +31,47 @@ function fmtDate(d) {
   return new Date(d).toLocaleDateString('es-MX', { year:'numeric', month:'short', day:'numeric' });
 }
 
+/**
+ * Builds a map: groupKey → count of spools with same barcode (or brand+material+color).
+ * Used to render the "×N bobinas" badge.
+ */
+function buildSpoolCountMap(filaments) {
+  const map = {};
+  filaments.forEach(f => {
+    // Group by barcode if present, otherwise by brand+material+color
+    const key = f.barcode
+      ? `bc:${f.barcode}`
+      : `bmc:${f.brand}|${f.material}|${f.color}`;
+    map[key] = (map[key] || 0) + 1;
+  });
+  return map;
+}
+
+function getSpoolKey(f) {
+  return f.barcode
+    ? `bc:${f.barcode}`
+    : `bmc:${f.brand}|${f.material}|${f.color}`;
+}
+
 /* ── Render GRID card ── */
-function renderCard(f) {
+function renderCard(f, spoolCountMap) {
   const pct = getWeightPct(f);
   const gradColor = getProgressColor(pct);
-  const hasDrying = f.dryingRequired ? `<span class="fm-badge" style="background:rgba(251,191,36,0.1);color:#fbbf24;border:1px solid rgba(251,191,36,0.25);"><i class="bi bi-droplet"></i>Secar</span>` : '';
+  const hasDrying = f.dryingRequired
+    ? `<span class="fm-badge" style="background:rgba(251,191,36,0.1);color:#fbbf24;border:1px solid rgba(251,191,36,0.25);"><i class="bi bi-droplet"></i>Secar</span>`
+    : '';
+
+  // Spool count badge
+  const count = spoolCountMap ? (spoolCountMap[getSpoolKey(f)] || 1) : 1;
+  const spoolBadge = count > 1
+    ? `<span class="fm-spool-count"><i class="bi bi-stack me-1"></i>×${count} bobinas</span>`
+    : '';
 
   return `
   <div class="col-sm-6 col-lg-4 col-xl-3">
     <div class="fm-card" onclick="UI.openDetail('${f.id}')" id="card-${f.id}">
       <div class="fm-card-color-band" style="background:${f.colorHex || '#FFFFFF'}"></div>
+      ${spoolBadge}
       <div class="fm-card-body">
         <div class="d-flex align-items-center justify-content-between mb-1">
           <span class="fm-card-brand">${escHtml(f.brand)}</span>
@@ -50,7 +81,7 @@ function renderCard(f) {
           <span class="fm-color-dot me-1" style="background:${f.colorHex || '#fff'};vertical-align:middle"></span>
           ${escHtml(f.color)}
         </div>
-        <div class="d-flex gap-2 align-items-center">
+        <div class="d-flex gap-2 align-items-center flex-wrap">
           ${getStatusBadge(f.status)}
           ${hasDrying}
         </div>
@@ -73,6 +104,9 @@ function renderCard(f) {
       <div class="fm-card-footer">
         <span class="text-muted" style="font-size:0.72rem">${f.price > 0 ? '$'+f.price.toFixed(2) : ''}</span>
         <div class="fm-card-actions d-flex gap-1" onclick="event.stopPropagation()">
+          <button class="btn btn-sm" onclick="UI.cloneSpool('${f.id}')" title="Clonar bobina">
+            <i class="bi bi-copy"></i>
+          </button>
           <button class="btn btn-sm" onclick="UI.openEdit('${f.id}')" title="Editar">
             <i class="bi bi-pencil"></i>
           </button>
@@ -86,15 +120,19 @@ function renderCard(f) {
 }
 
 /* ── Render LIST row ── */
-function renderRow(f) {
+function renderRow(f, spoolCountMap) {
   const pct = getWeightPct(f);
   const gradColor = getProgressColor(pct);
+  const count = spoolCountMap ? (spoolCountMap[getSpoolKey(f)] || 1) : 1;
+  const countBadge = count > 1
+    ? ` <span class="fm-spool-count" style="position:static;display:inline-flex;vertical-align:middle">×${count}</span>`
+    : '';
   return `
   <tr id="row-${f.id}" style="cursor:pointer" onclick="UI.openDetail('${f.id}')">
     <td>
       <div class="d-flex align-items-center gap-2">
         <div class="fm-color-dot" style="background:${f.colorHex || '#fff'}"></div>
-        <span>${escHtml(f.color)}</span>
+        <span>${escHtml(f.color)}${countBadge}</span>
       </div>
     </td>
     <td>
@@ -115,6 +153,7 @@ function renderRow(f) {
     <td>${getStatusBadge(f.status)}</td>
     <td>${f.storageLocation ? escHtml(f.storageLocation) : '<span class="text-muted">—</span>'}</td>
     <td class="text-center" onclick="event.stopPropagation()">
+      <button class="btn btn-sm me-1" style="background:var(--fm-surface-3);border:1px solid var(--fm-border);color:var(--fm-text-muted)" onclick="UI.cloneSpool('${f.id}')" title="Clonar"><i class="bi bi-copy"></i></button>
       <button class="btn btn-sm me-1" style="background:var(--fm-surface-3);border:1px solid var(--fm-border);color:var(--fm-text-muted)" onclick="UI.openEdit('${f.id}')" title="Editar"><i class="bi bi-pencil"></i></button>
       <button class="btn btn-sm" style="background:var(--fm-surface-3);border:1px solid var(--fm-border);color:var(--fm-text-muted)" onclick="UI.openDelete('${f.id}')" title="Eliminar"><i class="bi bi-trash3"></i></button>
     </td>
@@ -197,6 +236,11 @@ function renderDetail(f) {
       <button class="btn fm-btn-add flex-grow-1" onclick="closeDetailOpenEdit('${f.id}')">
         <i class="bi bi-pencil me-1"></i>Editar
       </button>
+      <button class="btn" title="Clonar bobina"
+        style="background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.3);color:#a78bfa"
+        onclick="bsDetailModal.hide();setTimeout(()=>UI.cloneSpool('${f.id}'),350)">
+        <i class="bi bi-copy"></i>
+      </button>
       <button class="btn" style="background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.3);color:var(--fm-danger)"
         onclick="closeDetailOpenDelete('${f.id}')">
         <i class="bi bi-trash3"></i>
@@ -217,4 +261,6 @@ window.renderRow  = renderRow;
 window.renderDetail = renderDetail;
 window.getStatusBadge = getStatusBadge;
 window.getWeightPct = getWeightPct;
+window.buildSpoolCountMap = buildSpoolCountMap;
+window.getSpoolKey = getSpoolKey;
 window.escHtml = escHtml;

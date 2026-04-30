@@ -598,3 +598,62 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   filter: invert(0.6);
   cursor: pointer;
 }
+
+/* ─── Barcode match modal ───────────────────────── */
+.fm-barcode-match-preview {
+  background: var(--fm-surface-2);
+  border: 1px solid var(--fm-border);
+  border-radius: var(--fm-radius-sm);
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.fm-barcode-match-preview .fm-color-dot {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+}
+.fm-match-siblings-title {
+  font-size: 0.72rem;
+  color: var(--fm-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+.fm-match-spool-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--fm-surface-2);
+  border: 1px solid var(--fm-border);
+  border-radius: var(--fm-radius-sm);
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.35rem;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: var(--fm-transition);
+}
+.fm-match-spool-item:hover {
+  border-color: var(--fm-primary);
+  background: var(--fm-surface-3);
+}
+
+/* ─── Spool count badge on card ─────────────────── */
+.fm-spool-count {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(91,140,255,0.18);
+  border: 1px solid rgba(91,140,255,0.35);
+  color: var(--fm-primary);
+  border-radius: 20px;
+  padding: 2px 8px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  backdrop-filter: blur(4px);
+}
+/* Card needs position:relative for the badge */
+.fm-card { position: relative; }

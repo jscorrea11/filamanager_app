@@ -423,6 +423,40 @@
   </div>
 </div>
 
+<!-- ══════════════════════════════ BARCODE MATCH MODAL ══════════════════════════════ -->
+<div class="modal fade" id="barcodeMatchModal" tabindex="-1" aria-labelledby="barcodeMatchLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content fm-modal">
+      <div class="modal-header border-0 pb-1">
+        <h5 class="modal-title fw-bold" id="barcodeMatchLabel">
+          <i class="bi bi-upc-scan me-2 text-primary"></i>Código reconocido
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <!-- Preview del filamento encontrado -->
+        <div class="fm-barcode-match-preview mb-3" id="barcodeMatchPreview"></div>
+        <!-- Bobinas del mismo código -->
+        <div id="barcodeMatchSiblings" class="mb-3"></div>
+        <p class="text-muted small mb-0">¿Qué deseas hacer?</p>
+      </div>
+      <div class="modal-footer border-0 flex-column gap-2 pt-0">
+        <button type="button" class="btn fm-btn-add w-100" id="bmAddNewSpool">
+          <i class="bi bi-plus-circle me-2"></i>Agregar nueva bobina igual
+          <small class="d-block opacity-75" style="font-size:0.72rem">Copia todos los datos · peso y estado como nuevo</small>
+        </button>
+        <button type="button" class="btn w-100" id="bmEditExisting"
+          style="background:var(--fm-surface-3);border:1px solid var(--fm-border);color:var(--fm-text)">
+          <i class="bi bi-pencil me-2"></i>Editar la bobina existente
+        </button>
+        <button type="button" class="btn btn-outline-secondary w-100" data-bs-dismiss="modal">
+          Cancelar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ══════════════════════════════ TOAST ══════════════════════════════ -->
 <div class="toast-container position-fixed bottom-0 end-0 p-3">
   <div id="appToast" class="toast align-items-center border-0 fm-toast" role="alert" aria-live="assertive" aria-atomic="true">
